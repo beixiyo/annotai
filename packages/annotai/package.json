@@ -1,6 +1,6 @@
 {
   "name": "annotai",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "Select page elements in the browser, collect precise source context with questions, and copy AI-ready Markdown; Alt+Shift jumps straight into Neovim",
   "keywords": [
     "vite",
@@ -16,6 +16,15 @@
     "devtools"
   ],
   "license": "MIT",
+  "homepage": "https://annotai.pages.dev",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/beixiyo/annotai.git",
+    "directory": "packages/annotai"
+  },
+  "bugs": {
+    "url": "https://github.com/beixiyo/annotai/issues"
+  },
   "type": "module",
   "publishConfig": {
     "access": "public"
