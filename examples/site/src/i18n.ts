@@ -10,6 +10,7 @@ const zh = {
   navQuickstart: '快速开始',
   navFaq: 'FAQ',
   navAria: '页面导航',
+  githubAria: '在 GitHub 查看源码',
   langAria: '切换语言',
 
   heroTitleL1: '让 AI 看见你',
@@ -89,6 +90,7 @@ const en: Record<SiteMessageKey, string> = {
   navQuickstart: 'Quick Start',
   navFaq: 'FAQ',
   navAria: 'Page navigation',
+  githubAria: 'View source on GitHub',
   langAria: 'Language',
 
   heroTitleL1: 'Let AI see exactly',
