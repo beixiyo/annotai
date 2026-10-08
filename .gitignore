@@ -1,0 +1,14 @@
+node_modules/
+dist/
+.DS_Store
+*.tsbuildinfo
+.playwright-cli/
+.fixture-*/
+.external-*/
+artifacts/
+
+# 构建时从仓库根同步进包的生成物
+packages/annotai/README.md
+
+# 演示图走 GitHub release assets，不进仓库
+docs/*.gif

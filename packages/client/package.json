@@ -1,0 +1,36 @@
+{
+  "name": "@annotai/client",
+  "version": "0.2.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/browser.js"
+    }
+  },
+  "scripts": {
+    "build": "vite build && tsc -p tsconfig.json --emitDeclarationOnly",
+    "typecheck": "tsc -p tsconfig.test.json",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@annotai/protocol": "workspace:*",
+    "lit": "^3.3.3",
+    "motion": "^13.2.0",
+    "prismjs": "^1.30.0"
+  },
+  "devDependencies": {
+    "@tailwindcss/vite": "^4.3.3",
+    "@types/prismjs": "^1.26.6",
+    "@vitest/browser-playwright": "4.1.11",
+    "playwright": "1.63.0",
+    "tailwindcss": "^4.3.3",
+    "typescript": "^5.9.3",
+    "vite": "8.2.1",
+    "vitest": "^4.1.0"
+  },
+  "files": [
+    "dist"
+  ]
+}

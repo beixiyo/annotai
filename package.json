@@ -1,0 +1,21 @@
+{
+  "name": "annotai-workspace",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@10.24.0",
+  "scripts": {
+    "build": "pnpm -r --if-present build",
+    "test": "pnpm --filter @annotai/client... build && pnpm -r --if-present test",
+    "typecheck": "pnpm -r typecheck && tsc -p tsconfig.e2e.json",
+    "dev": "pnpm --filter annotai... build && pnpm --filter annotai-site dev",
+    "test:e2e": "playwright test",
+    "format": "dprint fmt --config-discovery=global . --excludes pnpm-lock.yaml",
+    "format:check": "dprint check --config-discovery=global . --excludes pnpm-lock.yaml",
+    "publish": "pnpm typecheck && pnpm test && pnpm build && pnpm -r publish --no-git-checks"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.63.0",
+    "@types/node": "^22.20.2",
+    "typescript": "^5.9.3"
+  }
+}

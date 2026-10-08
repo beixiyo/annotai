@@ -1,0 +1,24 @@
+{
+  "name": "annotai-site",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build && vite build --ssr src/entry-server.tsx --outDir dist/server && node scripts/prerender.mjs",
+    "typecheck": "tsc --noEmit",
+    "record:demo": "node scripts/record-demo.ts"
+  },
+  "dependencies": {
+    "prismjs": "^1.30.0",
+    "solid-js": "^1.9.15"
+  },
+  "devDependencies": {
+    "@tailwindcss/vite": "^4.3.3",
+    "@types/prismjs": "^1.26.6",
+    "annotai": "workspace:*",
+    "tailwindcss": "^4.3.3",
+    "typescript": "^5.9.3",
+    "vite": "8.2.1",
+    "vite-plugin-solid": "^2.11.9"
+  }
+}

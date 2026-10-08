@@ -1,0 +1,101 @@
+{
+  "name": "annotai",
+  "version": "0.3.0",
+  "description": "Select page elements in the browser, collect precise source context with questions, and copy AI-ready Markdown; Alt+Shift jumps straight into Neovim",
+  "keywords": [
+    "vite",
+    "react",
+    "vue",
+    "solid",
+    "source-map",
+    "annotation",
+    "ai",
+    "code-review",
+    "neovim",
+    "markdown",
+    "devtools"
+  ],
+  "license": "MIT",
+  "type": "module",
+  "publishConfig": {
+    "access": "public"
+  },
+  "engines": {
+    "node": ">=22.12"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./vite": {
+      "types": "./dist/adapters/vite.d.ts",
+      "import": "./dist/adapters/vite.js"
+    },
+    "./react": {
+      "types": "./dist/transforms/react.d.ts",
+      "import": "./dist/transforms/react.js"
+    },
+    "./vue": {
+      "types": "./dist/transforms/vue.d.ts",
+      "import": "./dist/transforms/vue.js"
+    },
+    "./solid": {
+      "types": "./dist/transforms/solid.d.ts",
+      "import": "./dist/transforms/solid.js"
+    },
+    "./server": {
+      "types": "./dist/server/index.d.ts",
+      "import": "./dist/server/index.js"
+    },
+    "./editors": {
+      "types": "./dist/editors/index.d.ts",
+      "import": "./dist/editors/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json && node scripts/bundle-assets.mjs",
+    "typecheck": "tsc -p tsconfig.test.json",
+    "test": "vitest run",
+    "prepublishOnly": "pnpm typecheck && pnpm test && pnpm build"
+  },
+  "files": [
+    "dist"
+  ],
+  "peerDependencies": {
+    "vite": ">=7 <9"
+  },
+  "peerDependenciesMeta": {
+    "vite": {
+      "optional": true
+    }
+  },
+  "dependencies": {
+    "@babel/parser": "^7.28.0",
+    "@babel/types": "^7.28.0",
+    "@vue/compiler-dom": "^3.5.42",
+    "@vue/compiler-sfc": "^3.5.42",
+    "launch-ide": "^1.4.10",
+    "magic-string": "^0.30.21"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.29.7",
+    "@jridgewell/trace-mapping": "^0.3.31",
+    "@annotai/client": "workspace:*",
+    "@annotai/protocol": "workspace:*",
+    "@types/babel__core": "^7.20.5",
+    "@types/node": "^22.0.0",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "@vitejs/plugin-react": "^6.0.1",
+    "@vue/server-renderer": "^3.5.42",
+    "babel-preset-solid": "^1.9.15",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0",
+    "solid-js": "^1.9.15",
+    "typescript": "^5.9.3",
+    "vite": "8.2.1",
+    "vitest": "^4.1.0",
+    "vue": "^3.5.42"
+  }
+}
