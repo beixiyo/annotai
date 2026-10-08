@@ -11,6 +11,7 @@ const zh = {
   navFaq: 'FAQ',
   navAria: '页面导航',
   githubAria: '在 GitHub 查看源码',
+  frameworkAria: '切换演示框架',
   langAria: '切换语言',
 
   heroTitleL1: '让 AI 看见你',
@@ -36,6 +37,7 @@ const zh = {
   qsSubtitle: '三步接入，dev 服务即开即用',
   qs1Title: '安装',
   qs2Title: '接入 Vite',
+  qsFrameworkAria: '选择框架',
   qs3Title: '框选、复制、跳转',
   qs3Code: `# 页面右下角打开面板 → 框选元素 → 备注问题
 # 复制 Markdown 交给 AI，或 Alt+Shift 点击跳转到编辑器`,
@@ -91,6 +93,7 @@ const en: Record<SiteMessageKey, string> = {
   navFaq: 'FAQ',
   navAria: 'Page navigation',
   githubAria: 'View source on GitHub',
+  frameworkAria: 'Switch demo framework',
   langAria: 'Language',
 
   heroTitleL1: 'Let AI see exactly',
@@ -116,6 +119,7 @@ const en: Record<SiteMessageKey, string> = {
   qsSubtitle: 'Three steps; works as soon as the dev server starts.',
   qs1Title: 'Install',
   qs2Title: 'Add to Vite',
+  qsFrameworkAria: 'Choose framework',
   qs3Title: 'Select, copy, jump',
   qs3Code: `# Open the panel at bottom-right → select elements → note questions
 # Copy Markdown to your AI, or Alt+Shift click to jump to your editor`,

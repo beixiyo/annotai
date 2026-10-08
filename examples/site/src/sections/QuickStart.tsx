@@ -1,28 +1,56 @@
-/** 快速开始：安装、接入 Vite、框选复制三步，一步一行 */
-import { createMemo, For } from 'solid-js'
+/** 快速开始：安装、按框架接入 Vite、框选复制三步，一步一行；第二步随所选框架切换 vite.config 片段 */
+import { createMemo, createSignal, For } from 'solid-js'
 import { CodeBlock } from '../CodeBlock'
 import { t } from '../i18n'
 import { InstallCommand } from '../InstallCommand'
 
-export function QuickStart() {
-  const steps = createMemo(() => [
-    { title: t('qs1Title'), lang: 'bash' as const, code: '' },
-    {
-      title: t('qs2Title'),
-      lang: 'ts' as const,
-      code: `import { annotate } from 'annotai/vite'
+/** 接入框架的展示顺序 */
+const FRAMEWORK_IDS: readonly QuickFramework[] = ['react', 'vue', 'solid']
+
+/**
+ * 各框架的 vite.config 片段，与 README 的接入示例保持一致
+ * React 使用内置转换器；Vue / Solid 需显式传入对应的 transforms，`.tsx/.jsx` 无法区分编译目标
+ */
+const VITE_CONFIG: Record<QuickFramework, { label: string; code: string }> = {
+  react: {
+    label: 'React',
+    code: `import { annotate } from 'annotai/vite'
 
 export default defineConfig({
   plugins: [annotate()],
 })`,
-    },
-    {
-      title: t('qs3Title'),
-      lang: 'bash' as const,
-      code: `pnpm dev
+  },
+  vue: {
+    label: 'Vue',
+    code: `// pnpm add -D @vitejs/plugin-vue
+import vue from '@vitejs/plugin-vue'
+import { annotate } from 'annotai/vite'
+import { vueTransform } from 'annotai/vue'
 
-${t('qs3Code')}`,
-    },
+export default defineConfig({
+  plugins: [annotate({ transforms: [vueTransform] }), vue()],
+})`,
+  },
+  solid: {
+    label: 'Solid',
+    code: `// pnpm add -D vite-plugin-solid
+import { annotate } from 'annotai/vite'
+import { solidTransform } from 'annotai/solid'
+import solid from 'vite-plugin-solid'
+
+export default defineConfig({
+  plugins: [annotate({ transforms: [solidTransform] }), solid()],
+})`,
+  },
+}
+
+export function QuickStart() {
+  const [framework, setFramework] = createSignal<QuickFramework>('react')
+
+  const steps = createMemo(() => [
+    { title: t('qs1Title') },
+    { title: t('qs2Title') },
+    { title: t('qs3Title'), code: `pnpm dev\n\n${t('qs3Code')}` },
   ])
 
   return (
@@ -41,9 +69,31 @@ ${t('qs3Code')}`,
                   <h3 class="font-medium">{ step.title }</h3>
                 </div>
                 <div class="mt-4">
-                  { index() === 0
-                    ? <InstallCommand />
-                    : <CodeBlock code={ step.code } lang={ step.lang } /> }
+                  { index() === 0 && <InstallCommand /> }
+                  { index() === 1 && (
+                    <>
+                      { /* 第二步：框架切换放在代码块上方、左对齐，只影响 vite.config 片段 */ }
+                      <div role="radiogroup" aria-label={ t('qsFrameworkAria') } class="mb-4 flex w-fit items-center gap-1 rounded-full border border-line p-1">
+                        <For each={ FRAMEWORK_IDS }>
+                          { (id) => (
+                            <button
+                              type="button"
+                              role="radio"
+                              aria-checked={ framework() === id }
+                              onClick={ () => setFramework(id) }
+                              class={ `h-7 min-w-16 cursor-pointer rounded-full px-3 text-xs leading-none transition-colors focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-subtle ${
+                                framework() === id ? 'bg-invert font-medium text-on-invert' : 'text-muted hover:text-ink'
+                              }` }
+                            >
+                              { VITE_CONFIG[id].label }
+                            </button>
+                          ) }
+                        </For>
+                      </div>
+                      <CodeBlock code={ VITE_CONFIG[framework()].code } lang="ts" />
+                    </>
+                  ) }
+                  { index() === 2 && <CodeBlock code={ step.code ?? '' } lang="bash" /> }
                 </div>
               </div>
             ) }
@@ -53,3 +103,5 @@ ${t('qs3Code')}`,
     </section>
   )
 }
+
+export type QuickFramework = 'react' | 'vue' | 'solid'

@@ -20,13 +20,12 @@ export interface TargetOverlayProps {
   previewRef: (el: HTMLDivElement) => void
   /** 画布宽度：预览卡右缘不越出画布 */
   canvasWidth: number
+  /** 源码位置标签，形如 `文件名:行:列` */
+  location: string
 }
 
 /** 预览卡宽度与距画布右缘的最小留白（逻辑 px） */
 const PREVIEW = { width: 204, margin: 10 } as const
-
-/** 位置标签与 Markdown 中的源码坐标 */
-export const DEMO_LOCATION = 'ProductCard.tsx:23:9'
 
 export function TargetOverlay(props: TargetOverlayProps) {
   return (
@@ -41,9 +40,7 @@ export function TargetOverlay(props: TargetOverlayProps) {
               style={ { left: `${box().x}px`, top: `${box().y}px`, width: `${box().width}px`, height: `${box().height}px` } }
             >
               <span
-                class={ `absolute -top-[25px] -left-0.5 rounded-[5px] px-1.5 py-0.75 font-mono text-[11px] leading-4 whitespace-nowrap text-white transition-colors duration-200 ${
-                  'bg-[#2466db]'
-                }` }
+                class={ `absolute -top-[25px] -left-0.5 rounded-[5px] px-1.5 py-0.75 font-mono text-[11px] leading-4 whitespace-nowrap text-white transition-colors duration-200 ${'bg-[#2466db]'}` }
               >
                 { props.label }
               </span>
@@ -61,7 +58,7 @@ export function TargetOverlay(props: TargetOverlayProps) {
                 top: `${box().y}px`,
               } }
             >
-              <p class="mb-1 truncate text-[9.5px] text-[#8b8b9a]">/src/components/{ DEMO_LOCATION }</p>
+              <p class="mb-1 truncate text-[9.5px] text-[#8b8b9a]">/src/components/{ props.location }</p>
               <CodeLine no={ 22 }>
                 <Tag>{ '<div' }</Tag> <Attr>class</Attr>=<Str>"actions"</Str>
                 <Tag>{ '>' }</Tag>

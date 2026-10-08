@@ -4,13 +4,16 @@
  */
 import { Show } from 'solid-js'
 import { t } from '../../i18n'
-import { DEMO_LOCATION } from './TargetOverlay'
 
 export interface AgentWindowProps {
   /** 窗口可见（已粘贴） */
   open: boolean
   /** AI 已回复修改 */
   replied: boolean
+  /** 当前框架的源文件名，用于回复标题 */
+  file: string
+  /** 源码位置标签，形如 `文件名:行:列` */
+  location: string
   agentRef: (el: HTMLDivElement) => void
 }
 
@@ -43,7 +46,7 @@ export function AgentWindow(props: AgentWindowProps) {
             </p>
             <p>
               { t('demoMdLocation') }
-              <span class="text-[#7cb7ff]">`src/components/{ DEMO_LOCATION }`</span>
+              <span class="text-[#7cb7ff]">`src/components/{ props.location }`</span>
             </p>
           </div>
         </div>
@@ -52,7 +55,7 @@ export function AgentWindow(props: AgentWindowProps) {
         <Show when={ props.replied }>
           <div class="mt-3 animate-demo-rise border-t border-white/8 pt-3">
             <p>
-              <span class="text-[#4ade80]">●</span> { t('demoAgentEdited') } <span class="text-white">ProductCard.tsx</span>
+              <span class="text-[#4ade80]">●</span> { t('demoAgentEdited') } <span class="text-white">{ props.file }</span>
             </p>
             <div class="mt-1.5 overflow-hidden rounded-md bg-white/4 text-[10px]">
               <p class="truncate bg-[#f87171]/10 px-2 whitespace-pre text-[#fca5a5]">23 - { '<button class="btn-cart">' }</p>

@@ -3,10 +3,11 @@
  * 画布按固定逻辑尺寸排版，再整体缩放适配容器，任意宽度下构图一致；镜头在画布内平滑推拉到当前焦点
  * 叙事：选中元素（拿到 file:line:col）→ 写下问题 → 复制给 AI，AI 改对那一行，按钮变红
  */
-import { createEffect, createMemo, createSignal, on, onCleanup, onMount } from 'solid-js'
+import { createEffect, createMemo, createSignal, For, on, onCleanup, onMount } from 'solid-js'
 import { locale, t } from '../../i18n'
 import { AgentWindow } from './AgentWindow'
 import { ChapterRail } from './ChapterRail'
+import { DEMO_FRAMEWORK_IDS, DEMO_FRAMEWORKS, DEMO_POSITION, demoFramework, setDemoFramework } from './frameworks'
 import { anchorPoint, cameraFor, inflate, layoutBox, type StageBox, type StageOffset, unionBox } from './measure'
 import { MockApp } from './MockApp'
 import { MockPanel } from './MockPanel'
@@ -108,6 +109,10 @@ export function DemoPlayback(props: DemoPlaybackProps) {
     return box ? `button · ${box.width} × ${box.height}` : 'button'
   }
 
+  /** 当前框架的源文件名与位置标签 */
+  const file = () => DEMO_FRAMEWORKS[demoFramework()].file
+  const location = () => `${file()}:${DEMO_POSITION}`
+
   const at = (target: Step) => step() >= target
   const typed = () => question().slice(0, playback.typedCount()).join('')
   const durations = createMemo(() => chapterDurations(timeline()))
@@ -157,6 +162,26 @@ export function DemoPlayback(props: DemoPlaybackProps) {
 
   return (
     <figure class="animate-demo-enter">
+      { /* 框架切换：只改源文件名与位置标签，回放剧本不变 */ }
+      <div class="mb-3 flex justify-end">
+        <div role="radiogroup" aria-label={ t('frameworkAria') } class="flex items-center rounded-full border border-line p-0.5">
+          <For each={ DEMO_FRAMEWORK_IDS }>
+            { (id) => (
+              <button
+                type="button"
+                role="radio"
+                aria-checked={ demoFramework() === id }
+                onClick={ () => setDemoFramework(id) }
+                class={ `h-6 min-w-14 cursor-pointer rounded-full px-2.5 text-xs leading-none transition-colors focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-subtle ${
+                  demoFramework() === id ? 'bg-invert font-medium text-on-invert' : 'text-muted hover:text-ink'
+                }` }
+              >
+                { DEMO_FRAMEWORKS[id].label }
+              </button>
+            ) }
+          </For>
+        </div>
+      </div>
       <div
         ref={ frame }
         class="relative overflow-hidden rounded-2xl border border-line bg-surface shadow-[0_1px_2px_rgb(0_0_0/0.04),0_24px_60px_-24px_rgb(0_0_0/0.18)]"
@@ -174,10 +199,12 @@ export function DemoPlayback(props: DemoPlaybackProps) {
           style={ { width: `${CANVAS.width}px`, height: `${CANVAS.height}px`, transform: `scale(${fit() || 1})` } }
           aria-hidden="true"
         >
-          { /*
+          {
+            /*
             镜头层：平移 + 缩放，过渡走合成层
             透明度单独用淡出时长：淡出在 fadeOut 步内走完，回到 idle 时延迟淡入，状态复位发生在全透明期间，循环首尾无跳变
-          */ }
+          */
+          }
           <div
             class={ `absolute inset-0 origin-top-left will-change-transform ${step() === STEPS.fadeOut ? 'opacity-0' : 'opacity-100'}` }
             style={ {
@@ -197,6 +224,7 @@ export function DemoPlayback(props: DemoPlaybackProps) {
               preview={ step() === STEPS.hoverPreview }
               previewRef={ bind('preview') }
               canvasWidth={ CANVAS.width }
+              location={ location() }
             />
 
             <MockPanel
@@ -210,13 +238,20 @@ export function DemoPlayback(props: DemoPlaybackProps) {
                 pressing: step() === STEPS.copied,
                 copied: at(STEPS.copied),
               } }
+              file={ file() }
               launcherRef={ bind('launcher') }
               panelRef={ bind('panel') }
               inputRef={ bind('input') }
               copyRef={ bind('copy') }
             />
 
-            <AgentWindow agentRef={ bind('agent') } open={ at(STEPS.pasted) && !at(STEPS.applied) } replied={ at(STEPS.agentReply) } />
+            <AgentWindow
+              agentRef={ bind('agent') }
+              open={ at(STEPS.pasted) && !at(STEPS.applied) }
+              replied={ at(STEPS.agentReply) }
+              file={ file() }
+              location={ location() }
+            />
 
             { /* 演示光标 */ }
             <div

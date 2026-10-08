@@ -26,6 +26,8 @@ export interface MockPanelState {
 
 export interface MockPanelProps {
   state: MockPanelState
+  /** 当前框架的源文件名 */
+  file: string
   launcherRef: (el: HTMLDivElement) => void
   panelRef: (el: HTMLDivElement) => void
   inputRef: (el: HTMLDivElement) => void
@@ -81,7 +83,16 @@ export function MockPanel(props: MockPanelProps) {
               { t('demoCopy') }
             </span>
           </Show>
-          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" class="mr-0.5 ml-auto shrink-0 text-muted">
+          <svg
+            width="10"
+            height="10"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2.5"
+            stroke-linecap="round"
+            class="mr-0.5 ml-auto shrink-0 text-muted"
+          >
             <path d="M18 6 6 18" />
             <path d="m6 6 12 12" />
           </svg>
@@ -89,18 +100,18 @@ export function MockPanel(props: MockPanelProps) {
 
         <Show
           when={ s().selected }
-          fallback={
+          fallback={ 
             <div class="flex flex-col gap-1">
               <p class="font-medium">{ t('demoEmptySelecting') }</p>
               <p class="text-[11px] leading-relaxed text-muted">{ t('demoEmptyHint') }</p>
             </div>
-          }
+           }
         >
           <div class="flex animate-demo-rise flex-col gap-2">
             <p class="font-medium">{ t('demoSelected') }</p>
             { /* 目标卡：文件名 / 目录 / 行列，与客户端一致 */ }
             <div class="rounded-lg border border-line px-2.5 py-2">
-              <p class="font-medium">ProductCard.tsx</p>
+              <p class="font-medium">{ props.file }</p>
               <p class="mt-0.5 flex justify-between font-mono text-[10px] text-subtle">
                 <span>src/components</span>
                 <span>{ t('demoLineCol') }</span>
@@ -123,7 +134,17 @@ export function MockPanel(props: MockPanelProps) {
         { /* 状态行：客户端用一行静默文字反馈，不弹 toast */ }
         <Show when={ s().copied }>
           <p class="flex animate-demo-rise items-center gap-1.5 text-[11px] text-muted">
-            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" class="text-[#30a46c]">
+            <svg
+              width="11"
+              height="11"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="3"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              class="text-[#30a46c]"
+            >
               <path d="M20 6 9 17l-5-5" />
             </svg>
             { t('demoCopiedToast') }
