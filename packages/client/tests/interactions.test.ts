@@ -134,4 +134,23 @@ describe('session interactions', () => {
     window.dispatchEvent(new Event('blur'))
     expect(panel().querySelector('.annotai-highlight.hovered')).toBeNull()
   })
+
+  it('selects the nearest use-path element instead of a distant marked ancestor', () => {
+    mount()
+    // 模拟预构建组件库渲染的子树：内部无定义处标记，根上只有使用处明文路径
+    const root = document.createElement('div')
+    root.dataset.annotai = 'workspace-root'
+    const button = document.createElement('button')
+    button.setAttribute('data-annotai-use-path', '/workspace/src/App.tsx:10:9')
+    const icon = document.createElement('span')
+    icon.textContent = '加号图标'
+    button.append(icon)
+    root.append(button)
+    document.body.append(root)
+
+    // 指针落在库渲染的内部节点上：应停在使用处按钮，而不是更外层的定义处祖先
+    icon.dispatchEvent(new PointerEvent('pointermove', { bubbles: true, composed: true, altKey: true, shiftKey: true }))
+    const label = panel().querySelector('.annotai-highlight.hovered .annotai-highlight-label')
+    expect(label?.textContent).toMatch(/^button ·/)
+  })
 })

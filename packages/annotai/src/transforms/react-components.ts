@@ -3,7 +3,9 @@
  * 机制对照 code-inspector 的 transform-jsx，但属性名独立（data-annotai-use-path），
  * 不触碰原生元素的 data-annotai / data-annotai-path，定义处标注始终保留
  * 已知缺口：多根组件不传播（与 Vue fallthrough 语义一致）、portal 与 createElement 根不处理、
- * 未经转换的第三方组件收不到路径 */
+ * 未经转换的第三方组件收不到路径；后者渲染的 DOM 若无任何定义处标记，客户端回退选中
+ * 传播到此的使用处明文路径（服务端按位置反查使用处记录）
+ */
 import type {
   ArrowFunctionExpression,
   ClassDeclaration,

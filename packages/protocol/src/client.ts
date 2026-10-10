@@ -7,7 +7,12 @@ export interface SourceContext {
   path: string
   snippet: string
   startLine: number
+  /** 本条上下文对应的使用处明文引用；仅按 usePaths 请求时携带，供客户端按原值关联（source.file 已被规范化，可能与请求文本不一致） */
+  usePath?: string
 }
+
+/** resolve / open 的定位引用：优先定义处索引 ID；元素只带使用处明文路径时按位置反查 */
+export type SourceRef = { id: string } | { usePath: string }
 
 /** 可配置的上下文字段 */
 export interface ContextOptions {

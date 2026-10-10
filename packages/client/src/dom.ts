@@ -1,10 +1,11 @@
 /** DOM 查询、选区几何与捕获文本；不持有面板状态或全局监听器 */
-import { SOURCE_ATTRIBUTE } from '@annotai/protocol'
-import type { HotKey } from '@annotai/protocol'
+import { SOURCE_ATTRIBUTE, SOURCE_USE_PATH_ATTRIBUTE } from '@annotai/protocol'
+import type { HotKey, SourceRef } from '@annotai/protocol'
 import type { Translator } from './i18n.js'
 import type { Point } from './types.js'
 
-const MARKED_SELECTOR = `[${SOURCE_ATTRIBUTE}]`
+/** 可选中的标记元素：定义处索引或使用处明文路径，取最近者 */
+const MARKED_SELECTOR = `[${SOURCE_ATTRIBUTE}],[${SOURCE_USE_PATH_ATTRIBUTE}]`
 
 export function element<K extends keyof HTMLElementTagNameMap>(tag: K, className = '') {
   const node = document.createElement(tag)
@@ -12,14 +13,17 @@ export function element<K extends keyof HTMLElementTagNameMap>(tag: K, className
   return node
 }
 
-/** 事件目标所在的最近源码标记元素 */
+/** 事件目标所在的最近标记元素；预构建模块渲染的 DOM 只带使用处路径，同样可选中 */
 export function markedElement(target: EventTarget | null) {
   return target instanceof Element ? target.closest(MARKED_SELECTOR) ?? undefined : undefined
 }
 
-/** 读取元素上的源码索引 ID */
-export function sourceIdOf(target: Element) {
-  return target.getAttribute(SOURCE_ATTRIBUTE)
+/** 元素的定位引用：优先定义处索引 ID；仅有使用处明文路径时按位置反查（响应返回真实 ID，后续锚定仍走 ID） */
+export function sourceRefOf(target: Element): SourceRef | undefined {
+  const id = target.getAttribute(SOURCE_ATTRIBUTE)
+  if (id) return { id }
+  const usePath = target.getAttribute(SOURCE_USE_PATH_ATTRIBUTE)
+  return usePath ? { usePath } : undefined
 }
 
 export function isEditable(target: EventTarget | null) {

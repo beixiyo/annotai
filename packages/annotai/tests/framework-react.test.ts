@@ -14,14 +14,19 @@ function columnOf(code: string, snippet: string) {
   return code.indexOf(snippet) + 1
 }
 
-test('组件标签注入使用处路径，原生元素不注入', () => {
+test('组件标签注入使用处路径并登记使用处记录，原生元素不注入', () => {
   const code = 'export const App = () => <main><Card /><Card.Panel /><div /></main>'
   const result = transform(code)
 
-  expect(result.sources.map((source) => source.tag)).toEqual(['main', 'div'])
+  expect(result.sources.map((source) => source.tag)).toEqual(['main', 'Card', 'Card.Panel', 'div'])
   expect(result.code).toContain(`data-annotai-use-path="${file}:1:${columnOf(code, '<Card')}"`)
   expect(result.code).toContain(`data-annotai-use-path="${file}:1:${columnOf(code, '<Card.Panel')}"`)
   expect(result.code).not.toContain('<div data-annotai-use-path')
+
+  // 使用处记录的 span 覆盖整个 JSX 元素，供服务端按明文位置反查与片段展示
+  const use = result.sources.find((source) => source.tag === 'Card.Panel')
+  expect(use).toMatchObject({ file, start: { line: 1, column: columnOf(code, '<Card.Panel') } })
+  expect(code.slice(use!.start.offset, use!.end.offset)).toBe('<Card.Panel />')
 })
 
 test('无参组件补隐式 props 形参，根元素读取使用处路径', () => {
@@ -56,12 +61,15 @@ test('类组件 render 读取 this.props 的使用处路径', () => {
   expect(result.code).toContain('data-annotai-use-path={this.props && this.props["data-annotai-use-path"]}')
 })
 
-test('组件根是另一个组件时只注入动态传播属性，避免重复', () => {
-  const result = transform('function Inner(props) { return <div /> }\nexport const Card = (props) => <Inner />')
+test('组件根是另一个组件时只注入动态传播属性，避免重复且不登记使用处', () => {
+  const code = 'function Inner(props) { return <div /> }\nexport const Card = (props) => <Inner />'
+  const result = transform(code)
 
   expect(result.code).toContain('<Inner')
   expect(result.code.match(/data-annotai-use-path=\{/g)).toHaveLength(2)
   expect(result.code).not.toContain('<Inner data-annotai-use-path="')
+  // Inner 作为 Card 的根，静态注入被跳过：其 DOM 上的明文来自外层使用处，自身不登记记录
+  expect(result.sources.map((source) => source.tag)).toEqual(['div'])
 })
 
 test('return 的 JSX 变量绑定也能识别为根', () => {

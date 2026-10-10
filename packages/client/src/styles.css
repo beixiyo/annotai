@@ -13,7 +13,6 @@
 /* 元素行高亮：当前行高亮语义 */
 .annotai-preview-row-active {
   background: var(--sn-preview-active);
-  border-radius: 0.375rem;
 }
 
 /* 语法高亮 token 色板：与编辑器观感一致 */

@@ -9,7 +9,7 @@
 [![node](https://img.shields.io/badge/node-%3E%3D22.12-green)](https://nodejs.org)
 [![vite](https://img.shields.io/badge/vite-7%20%7C%208-purple)](https://vitejs.dev)
 
-Show AI exactly which element you're talking about: select elements in the browser, collect precise source context with your questions, and copy AI-ready Markdown. Hold Alt+Shift and click to open the source in your editor or IDE.
+Show AI exactly which element you're talking about: select elements in the browser, collect precise source context with your questions, and copy AI-ready Markdown. Hold Alt+Shift and click to open the source in your editor or IDE. When a click lands on DOM rendered by a prebuilt component library (no definition marks), the selection falls back to the component's call-site JSX — as long as the call-site path has propagated to the root element.
 
 ![demo](https://github.com/beixiyo/annotai/releases/download/v0.3.0/demo.gif)
 

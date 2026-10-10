@@ -1,4 +1,4 @@
-/** 受宿主挂载的源码服务；只接受索引 ID，不接受任意文件路径 */
+/** 受宿主挂载的源码服务；接受索引 ID 与已登记的使用处明文位置，不接受任意文件路径 */
 import type { SourceContext, SourceRecord } from '@annotai/protocol'
 import { randomBytes, timingSafeEqual } from 'node:crypto'
 import { readFileSync, realpathSync, statSync } from 'node:fs'
@@ -6,11 +6,13 @@ import type { IncomingMessage, ServerResponse } from 'node:http'
 import path from 'node:path'
 import { isWithin } from '../core/paths.js'
 import type { SourceIndex } from '../core/source-index.js'
+import { parseSourceLocation } from '../core/source-location.js'
 import { createEditor } from '../editors/index.js'
 import type { EditorConfig } from '../editors/index.js'
 
 const MAX_BODY_BYTES = 128 * 1024
 const MAX_IDS = 100
+const MAX_REF_CHARS = 512
 const MAX_SNIPPET_CHARS = 12_000
 
 /** 源码服务配置 */
@@ -100,8 +102,15 @@ export function createSourceService(options: SourceServiceOptions): SourceServic
       return
     }
     if (input.action === 'resolve') {
-      if (!Array.isArray(input.ids) || input.ids.length > MAX_IDS || input.ids.some((id) => typeof id !== 'string')) {
-        sendJson(response, 400, { error: 'invalid-ids' })
+      // ids 与 usePaths 均可缺省但不能同时为空；响应按「先 ids 段后 usePaths 段」拼接，段内各自去重保持请求顺序
+      const ids = input.ids === undefined ? [] : input.ids
+      const usePaths = input.usePaths === undefined ? [] : input.usePaths
+      const invalidIds = !Array.isArray(ids) || ids.some((id) => typeof id !== 'string' || id.length > MAX_REF_CHARS)
+      const invalidUsePaths = !Array.isArray(usePaths) || usePaths.some((path) => typeof path !== 'string' || path.length > MAX_REF_CHARS)
+      const uniqueIds = Array.isArray(ids) ? dedupe(ids) : []
+      const uniqueUsePaths = Array.isArray(usePaths) ? dedupe(usePaths) : []
+      if (invalidIds || invalidUsePaths || uniqueIds.length + uniqueUsePaths.length === 0 || uniqueIds.length + uniqueUsePaths.length > MAX_IDS) {
+        sendJson(response, 400, { error: invalidUsePaths && !invalidIds ? 'invalid-use-paths' : 'invalid-ids' })
         return
       }
       // 预览等调用方可按次覆盖片段行数；缺省用服务配置
@@ -114,9 +123,9 @@ export function createSourceService(options: SourceServiceOptions): SourceServic
         }
         requestLines = value
       }
-      // 全有或全无：任一 ID 过期即整体 409，客户端据此提示重新选择
+      // 全有或全无：任一引用过期即整体 409，客户端据此提示重新选择
       const sources: SourceContext[] = []
-      for (const id of dedupe(input.ids)) {
+      for (const id of uniqueIds) {
         const record = options.index.resolveSource(id)
         const context = record && await resolveContext(record, requestLines)
         if (!context) {
@@ -125,21 +134,41 @@ export function createSourceService(options: SourceServiceOptions): SourceServic
         }
         sources.push(context)
       }
+      // 使用处明文位置：仅当命中已登记记录（转换时登记的组件标签位置）才继续，
+      // 后续 validateFile 与快照核对与 ID 路径完全一致，伪造位置无法绕过边界
+      for (const usePath of uniqueUsePaths) {
+        const record = usePathRecord(usePath)
+        const context = record && await resolveContext(record, requestLines)
+        if (!context) {
+          sendJson(response, 409, { error: 'stale-source' })
+          return
+        }
+        // 回显原始明文引用：source.file 已规范化，客户端关联不能依赖重建路径字符串
+        sources.push({ ...context, usePath })
+      }
       sendJson(response, 200, { sources })
       return
     }
-    if (typeof input.id !== 'string' || input.id.length > 512) {
+    const hasId = typeof input.id === 'string'
+    const hasUsePath = typeof input.usePath === 'string'
+    if (!hasId && !hasUsePath) {
       sendJson(response, 400, { error: 'invalid-id' })
       return
     }
-    const record = options.index.resolveSource(input.id)
+    if ((hasId && input.id.length > MAX_REF_CHARS) || (hasUsePath && input.usePath.length > MAX_REF_CHARS)) {
+      sendJson(response, 400, { error: 'invalid-id' })
+      return
+    }
+    const record = hasId
+      ? options.index.resolveSource(input.id)
+      : usePathRecord(input.usePath as string)
     if (!record) {
       sendJson(response, 404, { error: 'source-not-found' })
       return
     }
     const context = await resolveContext(record)
     if (!context) {
-      sendJson(response, 409, { error: 'stale-source', id: input.id })
+      sendJson(response, 409, { error: 'stale-source', id: hasId ? input.id : undefined })
       return
     }
     try {
@@ -150,6 +179,15 @@ export function createSourceService(options: SourceServiceOptions): SourceServic
       return
     }
     sendJson(response, 200, { ok: true })
+  }
+
+  /** 明文使用处位置反查登记记录：行与列精确匹配转换时登记的组件标签位置 */
+  function usePathRecord(value: string) {
+    const location = parseSourceLocation(value)
+    if (!location) return undefined
+    return options.index.getSources(location.file).find(
+      (record) => record.start.line === location.line && record.start.column === location.column,
+    )
   }
 
   /** 核对真实路径、磁盘内容与登记快照后返回上下文；任一不符即视为过期 */

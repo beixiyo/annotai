@@ -4,4 +4,5 @@
  */
 export const SOURCE_ATTRIBUTE = 'data-annotai'
 export const SOURCE_PATH_ATTRIBUTE = 'data-annotai-path'
+/** 组件标签上明文写入的使用处 `file:line:column`，传播到组件根元素；DOM 只带此明文时服务端按位置反查使用处记录 */
 export const SOURCE_USE_PATH_ATTRIBUTE = 'data-annotai-use-path'

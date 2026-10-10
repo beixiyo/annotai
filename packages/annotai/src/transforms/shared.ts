@@ -2,6 +2,7 @@
 import type { SourcePosition, SourceRecord, TransformResult } from '@annotai/protocol'
 import type MagicString from 'magic-string'
 import { createHash } from 'node:crypto'
+import { formatSourceLocation } from '../core/source-location.js'
 import { SOURCE_ATTRIBUTE, SOURCE_PATH_ATTRIBUTE, SOURCE_USE_PATH_ATTRIBUTE } from './constants.js'
 
 /** 文件路径与内容共同决定版本；旧 DOM 的 ID 不会静默解析到更新后的位置 */
@@ -19,7 +20,7 @@ export function sourceAttributes(id: string, file: string, start: SourcePosition
   return ` ${SOURCE_ATTRIBUTE}="${id}" ${SOURCE_PATH_ATTRIBUTE}="${escapedLocation(file, start)}"`
 }
 
-/** 组件标签注入的使用处明文路径；无索引 ID，不参与服务端解析，仅供 DevTools 或其他工具读取 */
+/** 组件使用处标签注入的明文路径；使用处已登记为索引记录，服务端可按此位置反查 */
 export function usePathAttribute(file: string, start: SourcePosition) {
   return ` ${SOURCE_USE_PATH_ATTRIBUTE}="${escapedLocation(file, start)}"`
 }
@@ -48,5 +49,5 @@ function escapeAttribute(value: string) {
 }
 
 function escapedLocation(file: string, start: SourcePosition) {
-  return escapeAttribute(`${file}:${start.line}:${start.column}`)
+  return escapeAttribute(formatSourceLocation(file, start.line, start.column))
 }

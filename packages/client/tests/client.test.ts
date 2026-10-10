@@ -254,6 +254,51 @@ describe('mountAnnotai browser behavior', () => {
     expect(panel().querySelector<HTMLTextAreaElement>('[aria-label="编辑第 1 组问题"]')!.value).toBe('关闭面板也不丢')
   })
 
+  it('selects elements that only carry a use-site path and jumps to the use site', async () => {
+    // 预构建组件库渲染的按钮：子树无定义处标记，DOM 只带使用处明文路径（列号与 mock 上下文一致以便按位置关联）
+    const root = document.createElement('div')
+    root.dataset.annotai = 'lib-root'
+    const button = document.createElement('button')
+    button.setAttribute('data-annotai-use-path', '/workspace/src/App.tsx:10:5')
+    button.textContent = 'Ask Flowtica'
+    root.append(button)
+    document.body.append(root)
+
+    const bodies: Array<Record<string, unknown>> = []
+    vi.spyOn(globalThis, 'fetch').mockImplementation(async (input, init) => {
+      expect(isSourceRequest(input)).toBe(true)
+      bodies.push(JSON.parse(String(init?.body)))
+      // 回显原始引用，且 source.file 用与 DOM 属性不同的规范化路径：
+      // 客户端必须按回显关联，不能从响应 file 重建明文（否则永远关联不上）
+      const usePath = (JSON.parse(String(init?.body)).usePaths ?? [])[0] as string | undefined
+      const base = context('use-1', 10)
+      const resolved = usePath
+        ? { ...base, usePath, source: { ...base.source, file: '/private/workspace/src/App.tsx' } }
+        : base
+      return jsonResponse({ sources: [resolved] })
+    })
+    mount()
+
+    click(action('toggle-panel'))
+    pointerClick(button)
+    await waitForTargets()
+    // 选择解析按 usePaths 分段上送明文路径，目标预览展示使用处上下文
+    expect(bodies.at(-1)).toMatchObject({ action: 'resolve', ids: [], usePaths: ['/workspace/src/App.tsx:10:5'] })
+    const preview = panel().querySelector('.annotai-target-preview')?.textContent ?? ''
+    expect(preview).toContain('App.tsx')
+    expect(preview).toContain('第 10 行 · 第 5 列')
+    expect(preview).toContain('Ask Flowtica')
+
+    // 父级导航回到定义处标记的祖先：请求改走 ids 分段
+    click(action('select-parent'))
+    await waitFor(() => bodies.some((body) => Array.isArray(body.ids) && body.ids.includes('lib-root')))
+
+    // 热键点击直接以明文路径请求跳转使用处
+    click(button, { altKey: true, shiftKey: true })
+    await waitFor(() => bodies.some((body) => body.action === 'open'))
+    expect(bodies.find((body) => body.action === 'open')).toMatchObject({ usePath: '/workspace/src/App.tsx:10:5' })
+  })
+
   it('does not intercept marked business clicks after repeated dispose and remount cleanup', () => {
     const business = document.createElement('button')
     business.dataset.annotai = 'business'

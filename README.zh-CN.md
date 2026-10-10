@@ -9,7 +9,7 @@
 [![node](https://img.shields.io/badge/node-%3E%3D22.12-green)](https://nodejs.org)
 [![vite](https://img.shields.io/badge/vite-7%20%7C%208-purple)](https://vitejs.dev)
 
-让 AI 看见你在说哪个元素：在浏览器里框选页面元素，收集精确源码上下文与问题，复制 Markdown 直接交给 AI；按住 Alt+Shift 点击可在编辑器或 IDE 中打开源码
+让 AI 看见你在说哪个元素：在浏览器里框选页面元素，收集精确源码上下文与问题，复制 Markdown 直接交给 AI；按住 Alt+Shift 点击可在编辑器或 IDE 中打开源码。点击命中预构建组件库渲染的 DOM（无定义处标记）时，只要使用处路径已传播到根元素，就回退选中该组件的使用处 JSX
 
 ![demo](https://github.com/beixiyo/annotai/releases/download/v0.3.0/demo.zh.gif)
 

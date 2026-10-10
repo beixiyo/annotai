@@ -1,6 +1,6 @@
 {
   "name": "annotai",
-  "version": "0.4.0",
+  "version": "0.5.0",
   "description": "Select page elements in the browser, collect precise source context with questions, and copy AI-ready Markdown; Alt+Shift jumps straight into Neovim",
   "keywords": [
     "vite",

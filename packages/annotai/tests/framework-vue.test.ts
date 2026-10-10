@@ -72,17 +72,18 @@ test('Vue 保留字段冲突会阻止覆盖业务标记', () => {
 
 test('Vue 组件标签不注入原生元素标记，只注入使用处路径', () => {
   const file = '/project/App.vue'
-  const result = vueTransform.transform({
-    code: '<template><div><my-component /><MyComponent /></div></template>',
-    file,
-    environment: 'client',
-  })
+  const code = '<template><div><my-component /><MyComponent /></div></template>'
+  const result = vueTransform.transform({ code, file, environment: 'client' })
 
-  expect(result.sources.map((source) => source.tag)).toEqual(['div'])
+  expect(result.sources.map((source) => source.tag)).toEqual(['div', 'my-component', 'MyComponent'])
   expect(result.code).toContain(`data-annotai-use-path="${file}:1:16"`)
   expect(result.code).toContain(`data-annotai-use-path="${file}:1:32"`)
   expect(result.code).not.toContain('<my-component data-annotai=')
   expect(result.code).not.toContain('<MyComponent data-annotai=')
+  // 使用处同样登记记录：span 覆盖整个组件标签，供服务端按明文位置反查
+  const use = result.sources.find((source) => source.tag === 'MyComponent')
+  expect(use).toMatchObject({ file, start: { line: 1, column: 32 } })
+  expect(code.slice(use!.start.offset, use!.end.offset)).toBe('<MyComponent />')
 })
 
 test('Vue 内置组件标签不注入使用处路径', () => {

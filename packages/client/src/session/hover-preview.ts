@@ -1,6 +1,6 @@
 /** 悬停源码预览：停留计时、独立请求与元素右侧的预览卡 */
 import type { SourceContext } from '@annotai/protocol'
-import { element, sourceIdOf } from '../dom.js'
+import { element, sourceRefOf } from '../dom.js'
 import type { SessionContext } from './context.js'
 import { grammarFor, highlightLines } from './highlight.js'
 import { request } from './requests.js'
@@ -60,14 +60,14 @@ export function createHoverPreview(ctx: SessionContext): HoverPreview {
       state.hoveredElement = current
       updateHighlights()
     }
-    const id = sourceIdOf(current)
-    if (!id) return
+    const ref = sourceRefOf(current)
+    if (!ref) return
     const controller = new AbortController()
     pending = controller
     try {
       const response = await request<{ sources: SourceContext[] }>(
         normalized,
-        { action: 'resolve', ids: [id], surroundingLines: maxLines },
+        { action: 'resolve', ids: 'id' in ref ? [ref.id] : [], usePaths: 'usePath' in ref ? [ref.usePath] : [], surroundingLines: maxLines },
         controller.signal,
       )
       if (isDisposed() || target !== current || pending !== controller) return

@@ -17,7 +17,7 @@ export const App = () => <section><Button title="按钮" /><div>你好</div></se
   parse(result.code, { sourceType: 'module', plugins: ['jsx', 'typescript'] })
   const buttonColumn = code.indexOf('<Button') - code.lastIndexOf('\n', code.indexOf('<Button'))
 
-  expect(result.sources.map((source) => source.tag)).toEqual(['button', 'section', 'div'])
+  expect(result.sources.map((source) => source.tag)).toEqual(['button', 'section', 'Button', 'div'])
   // 组件标签注入使用处明文路径，业务 props 原样保留
   expect(result.code).toContain('<Button title="按钮"')
   expect(result.code).toContain(`data-annotai-use-path="/project/App.tsx:2:${buttonColumn}"`)

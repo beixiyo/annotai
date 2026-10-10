@@ -1,6 +1,6 @@
 /** 面板动作与业务流程：选择解析、热键跳转、草稿固化与复制 Markdown */
-import type { CapturedTarget, SourceContext } from '@annotai/protocol'
-import { createDomPath, errorMessage, isAbort, selectChild, selectParent, SourceServiceError, sourceIdOf, textOf } from '../dom.js'
+import type { CapturedTarget, SourceContext, SourceRef } from '@annotai/protocol'
+import { createDomPath, errorMessage, isAbort, selectChild, selectParent, sourceRefOf, SourceServiceError, textOf } from '../dom.js'
 import { annotationsToMarkdown } from '../markdown.js'
 import type { PanelAction } from '../panel-types.js'
 import { TARGET_PREVIEW_CLASS } from '../panel.js'
@@ -56,14 +56,25 @@ export function createActions(ctx: SessionContext): SessionActions {
     state.status = t('statusReading')
     render()
     const { generation, signal } = requests.begin()
-    const ids = elements.map(sourceIdOf).filter((id): id is string => Boolean(id))
+    // ids 与 usePaths 各自去重后分段发送：服务端响应按「先 ids 段后 usePaths 段」同序返回
+    const refs = elements.map(sourceRefOf).filter((ref): ref is SourceRef => Boolean(ref))
+    const ids = [...new Set(refs.flatMap((ref) => 'id' in ref ? [ref.id] : []))]
+    const usePaths = [...new Set(refs.flatMap((ref) => 'usePath' in ref ? [ref.usePath] : []))]
     const operation = (async () => {
       try {
-        const response = await request<{ sources: SourceContext[] }>(normalized, { action: 'resolve', ids }, signal)
+        const response = await request<{ sources: SourceContext[] }>(normalized, { action: 'resolve', ids, usePaths }, signal)
         if (!requests.isCurrent(generation)) return
-        const byId = new Map(response.sources.map((context) => [context.source.id, context]))
+        // 响应自描述关联，不依赖服务端返回顺序：ID 按值匹配，使用处按服务端回显的原始引用匹配（source.file 已规范化，不能重建）
+        const byId = new Map<string, SourceContext>()
+        const byUsePath = new Map<string, SourceContext>()
+        for (const context of response.sources) {
+          byId.set(context.source.id, context)
+          if (context.usePath) byUsePath.set(context.usePath, context)
+        }
         state.selectedTargets = elements.flatMap((element) => {
-          const context = byId.get(sourceIdOf(element) ?? '')
+          const ref = sourceRefOf(element)
+          if (!ref) return []
+          const context = 'id' in ref ? byId.get(ref.id) : byUsePath.get(ref.usePath)
           return context ? [captureTarget(element, context)] : []
         })
         state.loading = false
@@ -85,8 +96,8 @@ export function createActions(ctx: SessionContext): SessionActions {
   }
 
   async function openSource(target: Element) {
-    const id = sourceIdOf(target)
-    if (!id) return
+    const ref = sourceRefOf(target)
+    if (!ref) return
     if (state.hoveredElement) {
       preview.request(undefined)
       state.hoveredElement = undefined
@@ -96,7 +107,7 @@ export function createActions(ctx: SessionContext): SessionActions {
     render()
     const { generation, signal } = openRequests.begin()
     try {
-      await request<{ ok: true }>(normalized, { action: 'open', id }, signal)
+      await request<{ ok: true }>(normalized, { action: 'open', ...ref }, signal)
       if (!openRequests.isCurrent(generation)) return
       state.status = t('statusOpened')
       render()

@@ -72,12 +72,21 @@ function transformVue(input: TransformInput): TransformResult {
     // 组件标签不是 DOM 节点：注入使用处明文路径，靠 Vue attrs fallthrough 落到单根组件的根元素；
     // 多根、inheritAttrs:false 与内置组件落不到 DOM，但不影响原生元素的定位标注
     // 注入前同样拦截保留名，否则同名静态属性注入后重复，Vue 编译器直接报错
+    // 使用处同时登记为索引记录：预构建组件库渲染的 DOM 只携带明文路径，服务端可按位置反查
     if (element.tagType !== ElementTypes.COMPONENT || NO_FALLTHROUGH_TAGS.has(element.tag)) return
     const reserved = findReservedAttribute(element)
     if (reserved) throw reservedAttributeError(file, reserved)
     const openingEnd = findOpeningTagEnd(code, element.loc)
     if (openingEnd == null) return
-    output.appendLeft(openingEnd, usePathAttribute(file, toPosition(element.loc.start)))
+    const start = toPosition(element.loc.start)
+    sources.push({
+      id: createSourceId(version, element.loc.start.offset),
+      file,
+      tag: element.tag,
+      start,
+      end: toPosition(element.loc.end),
+    })
+    output.appendLeft(openingEnd, usePathAttribute(file, start))
   })
 
   return createTransformResult(output, file, sources)
