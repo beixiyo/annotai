@@ -2,6 +2,15 @@
 import { expect, test } from '@playwright/test'
 import { closePanel, copyMarkdown, launcher, saveQuestion } from './helpers.js'
 
+test('组件使用处路径落在组件根元素上，与定义处标注共存', async ({ page }) => {
+  await page.goto('/')
+  const faq = page.locator('#faq')
+  // Faq.tsx 里 section 的定义处标注
+  expect(await faq.getAttribute('data-annotai-path')).toMatch(/sections\/Faq\.tsx:\d+:\d+$/)
+  // App.tsx 里 <Faq /> 的使用处路径，经组件改写传播到根
+  expect(await faq.getAttribute('data-annotai-use-path')).toMatch(/src\/App\.tsx:16:9$/)
+})
+
 test('client-side filtering and details toggling work with source markers present', async ({ page }) => {
   await page.goto('/')
   const search = page.getByRole('searchbox', { name: '搜索常见问题', exact: true })

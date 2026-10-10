@@ -17,17 +17,17 @@ Open the panel → select elements → type your question → pick the next spot
 
 ## How it compares
 
-| Capability              | annotai                                                              | [code-inspector-plugin](https://github.com/zh-lx/code-inspector) | [agentation](https://github.com/benjitaylor/agentation) |
-| ----------------------- | -------------------------------------------------------------------- | ---------------------------------------------------------------- | ------------------------------------------------------- |
-| Source locating         | sourcemap-exact to line & column                                     | exact                                                            | inaccurate, no file path                                |
-| Neovim jump             | ✔ socket discovery, cwd matching, UTF-16 column conversion           | ✘                                                                | ✘                                                       |
-| Other editors           | `open` hook for anything; falls back to launch-ide                   | VSCode / Cursor / WebStorm                                       | ✘                                                       |
-| Plain-text DOM location | `data-annotai-path="file:line:col"`, readable in DevTools            | ✘                                                                | ✘                                                       |
-| Hover source preview    | ✔ highlighted element line + syntax coloring + auto scroll into view | ✘                                                                | ✘                                                       |
-| Output for AI           | Markdown with paths, line/column and snippets — paste and go         | none (human-oriented jumping)                                    | CSS selectors, AI has to grep again                     |
-| Question list           | select + annotate + field toggles, kept automatically per group      | ✘                                                                | ✘                                                       |
-| Frameworks              | React / Vue / Solid                                                  | React / Vue etc.                                                 | React                                                   |
-| Shape                   | build-time plugin, dev only, zero residue in production              | same                                                             | React runtime component, mounted in production too      |
+| Capability              | annotai                                                                                                     | [code-inspector-plugin](https://github.com/zh-lx/code-inspector) | [agentation](https://github.com/benjitaylor/agentation) |
+| ----------------------- | ----------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------- | ------------------------------------------------------- |
+| Source locating         | sourcemap-exact to line & column                                                                            | exact                                                            | inaccurate, no file path                                |
+| Neovim jump             | ✔ socket discovery, cwd matching, UTF-16 column conversion                                                  | ✘                                                                | ✘                                                       |
+| Other editors           | `open` hook for anything; falls back to launch-ide                                                          | VSCode / Cursor / WebStorm                                       | ✘                                                       |
+| Plain-text DOM location | `data-annotai-path` (definition) + `data-annotai-use-path` (call site) on one element, readable in DevTools | `data-insp-path`, call site overwrites the definition site       | ✘                                                       |
+| Hover source preview    | ✔ highlighted element line + syntax coloring + auto scroll into view                                        | ✘                                                                | ✘                                                       |
+| Output for AI           | Markdown with paths, line/column and snippets — paste and go                                                | none (human-oriented jumping)                                    | CSS selectors, AI has to grep again                     |
+| Question list           | select + annotate + field toggles, kept automatically per group                                             | ✘                                                                | ✘                                                       |
+| Frameworks              | React / Vue / Solid                                                                                         | React / Vue etc.                                                 | React                                                   |
+| Shape                   | build-time plugin, dev only, zero residue in production                                                     | same                                                             | React runtime component, mounted in production too      |
 
 ## Getting started
 

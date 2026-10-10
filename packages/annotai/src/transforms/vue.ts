@@ -1,10 +1,18 @@
-/** Vue SFC template 适配器：复用 compiler-sfc 已解析的 template AST，在原生元素注入源码位置 */
+/** Vue SFC template 适配器：复用 compiler-sfc 已解析的 template AST，在原生元素注入源码位置，在组件标签注入使用处路径 */
 import type { SourceRecord, SourceTransform, TransformInput, TransformResult } from '@annotai/protocol'
 import { ElementTypes, NodeTypes } from '@vue/compiler-dom'
 import type { ElementNode, Node, SourceLocation } from '@vue/compiler-dom'
 import { parse } from '@vue/compiler-sfc'
 import MagicString from 'magic-string'
-import { createSourceId, createTransformResult, createVersion, isReservedAttribute, reservedAttributeError, sourceAttributes } from './shared.js'
+import {
+  createSourceId,
+  createTransformResult,
+  createVersion,
+  isReservedAttribute,
+  reservedAttributeError,
+  sourceAttributes,
+  usePathAttribute,
+} from './shared.js'
 
 /** Vue 适配器；只处理 HTML template，不处理 Pug 等模板语言 */
 export const vueTransform: SourceTransform = {
@@ -12,6 +20,20 @@ export const vueTransform: SourceTransform = {
   supports: (file) => /\.vue$/i.test(file),
   transform: transformVue,
 }
+
+/** 这些内置组件不产生自己的根 DOM，attrs 不会 fallthrough，注入只会丢失 */
+const NO_FALLTHROUGH_TAGS = new Set([
+  'Transition',
+  'transition',
+  'TransitionGroup',
+  'transition-group',
+  'KeepAlive',
+  'keep-alive',
+  'Teleport',
+  'teleport',
+  'Suspense',
+  'suspense',
+])
 
 /** 在 SFC 的原始 template 内容上注入位置标记，供后续 Vue 编译器继续处理 */
 function transformVue(input: TransformInput): TransformResult {
@@ -34,17 +56,28 @@ function transformVue(input: TransformInput): TransformResult {
     // compiler-core 的 Node 不是判别联合，按 type 判断后显式收窄
     if (node.type !== NodeTypes.ELEMENT) return
     const element = node as ElementNode
-    // template/slot/组件等节点不一定产生可选中的 DOM 元素
-    if (element.tagType !== ElementTypes.ELEMENT) return
+
+    if (element.tagType === ElementTypes.ELEMENT) {
+      const reserved = findReservedAttribute(element)
+      if (reserved) throw reservedAttributeError(file, reserved)
+      const openingEnd = findOpeningTagEnd(code, element.loc)
+      if (openingEnd == null) return
+      const id = createSourceId(version, element.loc.start.offset)
+      const start = toPosition(element.loc.start)
+      output.appendLeft(openingEnd, sourceAttributes(id, file, start))
+      sources.push({ id, file, tag: element.tag, start, end: toPosition(element.loc.end) })
+      return
+    }
+
+    // 组件标签不是 DOM 节点：注入使用处明文路径，靠 Vue attrs fallthrough 落到单根组件的根元素；
+    // 多根、inheritAttrs:false 与内置组件落不到 DOM，但不影响原生元素的定位标注
+    // 注入前同样拦截保留名，否则同名静态属性注入后重复，Vue 编译器直接报错
+    if (element.tagType !== ElementTypes.COMPONENT || NO_FALLTHROUGH_TAGS.has(element.tag)) return
     const reserved = findReservedAttribute(element)
     if (reserved) throw reservedAttributeError(file, reserved)
-
     const openingEnd = findOpeningTagEnd(code, element.loc)
     if (openingEnd == null) return
-    const id = createSourceId(version, element.loc.start.offset)
-    const start = toPosition(element.loc.start)
-    output.appendLeft(openingEnd, sourceAttributes(id, file, start))
-    sources.push({ id, file, tag: element.tag, start, end: toPosition(element.loc.end) })
+    output.appendLeft(openingEnd, usePathAttribute(file, toPosition(element.loc.start)))
   })
 
   return createTransformResult(output, file, sources)

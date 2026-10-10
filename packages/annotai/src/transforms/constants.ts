@@ -4,3 +4,4 @@
  */
 export const SOURCE_ATTRIBUTE = 'data-annotai'
 export const SOURCE_PATH_ATTRIBUTE = 'data-annotai-path'
+export const SOURCE_USE_PATH_ATTRIBUTE = 'data-annotai-use-path'

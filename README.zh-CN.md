@@ -22,7 +22,7 @@
 | 源码定位       | sourcemap 精确到行列                                | 精确                                                             | 不准确，无文件路径                                      |
 | Neovim 跳转    | ✔ socket 发现、cwd 匹配、UTF-16 列换算              | ✘                                                                | ✘                                                       |
 | 其他编辑器     | `open` 钩子任意接入，无实例时回退 launch-ide        | VSCode / Cursor / WebStorm                                       | ✘                                                       |
-| DOM 明文位置   | `data-annotai-path="文件:行:列"`，DevTools 直接可读 | ✘                                                                | ✘                                                       |
+| DOM 明文位置   | `data-annotai-path`（定义处）+ `data-annotai-use-path`（使用处），同一元素上 DevTools 直接可读 | `data-insp-path`，调用点覆盖定义处                               | ✘                                                       |
 | 悬停源码预览   | ✔ 元素行高亮 + 语法着色 + 自动滚入可视区            | ✘                                                                | ✘                                                       |
 | 交给 AI 的产物 | 带路径行列与源码片段的 Markdown，粘贴即用           | 无（面向人工跳转）                                               | CSS 选择器，AI 需二次 grep                              |
 | 问题清单       | 框选 + 备注 + 字段开关，按组保存                    | ✘                                                                | ✘                                                       |

@@ -2,7 +2,7 @@
 import { compile } from '@vue/compiler-dom'
 import { renderToString } from '@vue/server-renderer'
 import { expect, test } from 'vitest'
-import { createSSRApp } from 'vue'
+import { createSSRApp, h } from 'vue'
 import { vueTransform } from '../src/transforms/vue.js'
 
 test('Vue HTML template 注入位置并经 Vue SSR 保留属性', async () => {
@@ -61,18 +61,63 @@ test('Vue 保留字段冲突会阻止覆盖业务标记', () => {
       environment: 'client',
     })
   ).toThrow('data-annotai-path is reserved')
+  expect(() =>
+    vueTransform.transform({
+      code: '<template><MyCard data-annotai-use-path="business" /></template>',
+      file: '/project/App.vue',
+      environment: 'client',
+    })
+  ).toThrow('data-annotai-use-path is reserved')
 })
 
-test('Vue 组件标签不注入原生元素标记', () => {
+test('Vue 组件标签不注入原生元素标记，只注入使用处路径', () => {
+  const file = '/project/App.vue'
   const result = vueTransform.transform({
     code: '<template><div><my-component /><MyComponent /></div></template>',
-    file: '/project/App.vue',
+    file,
     environment: 'client',
   })
 
   expect(result.sources.map((source) => source.tag)).toEqual(['div'])
-  expect(result.code).toContain('<my-component />')
-  expect(result.code).toContain('<MyComponent />')
+  expect(result.code).toContain(`data-annotai-use-path="${file}:1:16"`)
+  expect(result.code).toContain(`data-annotai-use-path="${file}:1:32"`)
+  expect(result.code).not.toContain('<my-component data-annotai=')
+  expect(result.code).not.toContain('<MyComponent data-annotai=')
+})
+
+test('Vue 内置组件标签不注入使用处路径', () => {
+  const result = vueTransform.transform({
+    code: '<template><div><Transition><span /></Transition><keep-alive><span /></keep-alive></div></template>',
+    file: '/project/App.vue',
+    environment: 'client',
+  })
+
+  expect(result.sources.map((source) => source.tag)).toEqual(['div', 'span', 'span'])
+  expect(result.code).not.toContain('data-annotai-use-path')
+})
+
+test('Vue 组件使用处路径经 fallthrough 落到根元素，不覆盖定义处标注', async () => {
+  const file = '/project/App.vue'
+  const code = `<template>
+  <my-card />
+</template>`
+  const result = vueTransform.transform({ code, file, environment: 'client' })
+  const template = result.code.slice(result.code.indexOf('<template>') + '<template>'.length, result.code.lastIndexOf('</template>'))
+  const compiled = compile(template, { mode: 'function' })
+  const render = new Function('Vue', compiled.code)(await import('vue')) as (
+    ctx: Record<string, unknown>,
+    cache: unknown[],
+  ) => unknown
+  // MyCard 模拟一个已被 annotai 处理过的子组件：根元素自带定义处标注
+  const MyCard = {
+    render: () => h('div', { 'data-annotai': 'card-id', 'data-annotai-path': '/project/Card.vue:1:1' }, '卡'),
+  }
+  const html = await renderToString(createSSRApp({ render, components: { MyCard } }))
+
+  expect(result.code).toContain(`data-annotai-use-path="${file}:2:3"`)
+  expect(html).toContain('data-annotai="card-id"')
+  expect(html).toContain('data-annotai-path="/project/Card.vue:1:1"')
+  expect(html).toContain(`data-annotai-use-path="${file}:2:3"`)
 })
 
 test('Vue SFC 解析错误不会被静默吞掉', () => {

@@ -14,10 +14,13 @@ const FRAMEWORK_IDS: readonly QuickFramework[] = ['react', 'vue', 'solid']
 const VITE_CONFIG: Record<QuickFramework, { label: string; code: string }> = {
   react: {
     label: 'React',
-    code: `import { annotate } from 'annotai/vite'
+    code: `// pnpm add -D @vitejs/plugin-react
+import react from '@vitejs/plugin-react'
+import { annotate } from 'annotai/vite'
+import { defineConfig } from 'vite'
 
 export default defineConfig({
-  plugins: [annotate()],
+  plugins: [annotate(), react()],
 })`,
   },
   vue: {
@@ -26,6 +29,7 @@ export default defineConfig({
 import vue from '@vitejs/plugin-vue'
 import { annotate } from 'annotai/vite'
 import { vueTransform } from 'annotai/vue'
+import { defineConfig } from 'vite'
 
 export default defineConfig({
   plugins: [annotate({ transforms: [vueTransform] }), vue()],
@@ -36,6 +40,7 @@ export default defineConfig({
     code: `// pnpm add -D vite-plugin-solid
 import { annotate } from 'annotai/vite'
 import { solidTransform } from 'annotai/solid'
+import { defineConfig } from 'vite'
 import solid from 'vite-plugin-solid'
 
 export default defineConfig({

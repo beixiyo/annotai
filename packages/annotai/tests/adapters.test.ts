@@ -20,8 +20,9 @@ test('React 渲染保留组件边界和业务属性，DOM 标记解析到原始�
   const root = await fixture()
   const code = `import React from 'react'
 function Button(props) { return <button {...props}>提交</button> }
+function Chip(props) { return <b>{props.children}</b> }
 export default function App() {
-  return <><Button title="保存" /><svg><path d="M0 0" /></svg></>
+  return <><Button title="保存" /><Chip>加粗</Chip><svg><path d="M0 0" /></svg></>
 }`
   await writeFile(path.join(root, 'App.tsx'), code)
   const plugin = annotate()
@@ -31,28 +32,34 @@ export default function App() {
   const html = renderToStaticMarkup(createElement(module.default))
   expect(html).toContain('title="保存"')
   const ids = [...html.matchAll(/data-annotai="([^"]+)"/g)].map((match) => match[1])
-  expect(ids).toHaveLength(3)
+  expect(ids).toHaveLength(4)
   const records = ids.map((id) => plugin.api.resolveSource(id))
-  expect(records.map((record) => record?.tag)).toEqual(['button', 'svg', 'path'])
+  expect(records.map((record) => record?.tag)).toEqual(['button', 'b', 'svg', 'path'])
   expect(records[0]?.start.line).toBe(2)
   expect(records[0]?.start.column).toBe(33)
   expect(records[0]?.file).toBe(path.join(root, 'App.tsx'))
   // DOM 同时携带明文位置，无需请求服务即可读取
   const paths = [...html.matchAll(/data-annotai-path="([^"]+)"/g)].map((match) => match[1])
   expect(paths).toEqual(records.map((record) => `${record!.file}:${record!.start.line}:${record!.start.column}`))
+  // 组件标签的使用处路径经改写传播到组件根：Button 靠 spread 转发，
+  // Chip 不 spread props，路径只能来自根节点上的动态传播属性——证明改写本身生效
+  const usePaths = [...html.matchAll(/data-annotai-use-path="([^"]+)"/g)].map((match) => match[1])
+  expect(usePaths).toHaveLength(2)
+  for (const usePath of usePaths) expect(usePath).toMatch(/App\.tsx:5:\d+$/)
 })
 
 test('业务代码声明保留属性时拒绝转换', () => {
-  for (const attribute of ['data-annotai', 'data-annotai-path']) {
+  for (const attribute of ['data-annotai', 'data-annotai-path', 'data-annotai-use-path']) {
     expect(() => reactTransform.transform({ code: `export const App = () => <div ${attribute}="x" />`, file: '/project/App.tsx', environment: 'client' }))
       .toThrow(`${attribute} is reserved`)
   }
 })
 
-test('转换输出提供原始位置映射，且不改写组件 props', () => {
+test('转换输出提供原始位置映射，组件标签另注入使用处路径', () => {
   const code = 'export const App = () => <Widget><div>你好</div></Widget>'
   const result = reactTransform.transform({ code, file: '/project/App.tsx', environment: 'client' })
   expect(result.sources.map((source) => source.tag)).toEqual(['div'])
+  expect(result.code).toContain('<Widget data-annotai-use-path=')
   const generatedColumn = result.code.indexOf('你好')
   const original = originalPositionFor(new TraceMap(result.map), { line: 1, column: generatedColumn })
   expect(original.column).toBe(code.indexOf('你好'))
